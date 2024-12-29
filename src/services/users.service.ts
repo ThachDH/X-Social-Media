@@ -1,16 +1,53 @@
+import { RegisterReqBody } from '~/models/requests/User.requests'
 import User from '../models/schemas/User.schema'
 import databaseServices from './database.services'
+import { TokenType } from '../constants/enum'
+import { signToken } from '../utils/jwt'
+import { hashPassword } from '../utils/crypto'
 
 class UsersService {
-  async register(payload: { email: string; password: string }) {
-    const { email, password } = payload
-    const results = await databaseServices.users.insertOne(new User({ email, password }))
-    return results
+  private signAccessToken(user_id: string) {
+    return signToken({
+      payload: {
+        user_id,
+        token_type: TokenType.AccessToken
+      },
+      options: {
+        expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN
+      }
+    })
+  }
+
+  private signRefreshToken(user_id: string) {
+    return signToken({
+      payload: {
+        user_id,
+        token_type: TokenType.RefreshToken
+      },
+      options: {
+        expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN
+      }
+    })
+  }
+
+  async register(payload: RegisterReqBody) {
+    const results = await databaseServices.users.insertOne(
+      new User({ ...payload, date_of_birth: new Date(payload.date_of_birth), password: hashPassword(payload.password) })
+    )
+    const user_id = results.insertedId.toString()
+    const [accesstoken, refreshtoken] = await Promise.all([
+      this.signAccessToken(user_id),
+      this.signRefreshToken(user_id)
+    ])
+    return {
+      accesstoken,
+      refreshtoken
+    }
   }
 
   async checkEmailExists(email: string) {
     const users = await databaseServices.users.findOne({ email })
-    return Boolean(users);
+    return Boolean(users)
   }
 }
 
