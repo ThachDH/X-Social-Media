@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express'
 // import { loginController } from 'src/controllers/users.controllers'
 import { loginController, registerController } from '../controllers/users.controllers'
 import { registerValidator } from '../middlewares/users.middlewares'
+import { wrapAsync } from '../utils/handlers'
 
 const usersRouter = express.Router()
 
@@ -12,6 +13,6 @@ usersRouter.post('/login', loginController)
 // Path /register
 // Method: POST
 // Body: {name: string, email: string, password: string, confirm_password: string, date_of_birth: ISOString}
-usersRouter.post('/register', registerValidator, registerController)
+usersRouter.post('/register', registerValidator, wrapAsync(registerController))
 
 export default usersRouter
