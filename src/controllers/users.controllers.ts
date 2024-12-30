@@ -24,7 +24,7 @@ export const registerController = async (
       data: results
     })
   } catch (err) {
-    console.log('registerController', err)
+    console.log('registerControllerdd', err)
     next(err)
   }
 }
